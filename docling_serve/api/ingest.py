@@ -18,6 +18,8 @@ from docling_core.document.document_elements import Group, SectionHeaderItem # F
 from docling_serve.core.models import Chunk, ChunkMetadata, IngestionResponse
 # CUSTOM: Import ID generation functions from Task 3
 from docling_serve.core.ids import compute_doc_id, compute_chunk_id
+# CUSTOM: Import citation building function from Task 4
+from docling_serve.core.citations import build_citation
 
 # Initialize router
 # The prefix /v1 will be added when including this router in the main app
@@ -161,21 +163,43 @@ async def ingest_document(
                 if text_item.label in ["PAGE_HEADER", "PAGE_FOOTER"]:
                     continue
 
-                # CUSTOM: Page number defaulting
-                page_number: int = 0 # Default page number
-                if text_item.prov and len(text_item.prov) > 0 and text_item.prov[0].page_no is not None:
-                    page_number = text_item.prov[0].page_no
+                # CUSTOM: Task 4 - Page number is now Optional[int]
+                page_number: Optional[int] = None
+                bbox_data: Optional[list[float]] = None # For location
 
-                # CUSTOM: Generate chunk_id
+                if text_item.prov and len(text_item.prov) > 0:
+                    provenance_item = text_item.prov[0]
+                    if provenance_item.page_no is not None:
+                        page_number = provenance_item.page_no
+
+                    # CUSTOM: Task 4 - Extract bounding box for location
+                    if hasattr(provenance_item, 'bbox') and isinstance(provenance_item.bbox, list) and len(provenance_item.bbox) == 4:
+                        # Ensure all elements are numbers (float or int)
+                        if all(isinstance(coord, (float, int)) for coord in provenance_item.bbox):
+                            bbox_data = [float(coord) for coord in provenance_item.bbox]
+
+                # CUSTOM: Generate chunk_id (Task 3)
                 chunk_id = compute_chunk_id(doc_id=doc_id, text=text_content)
 
-                # CUSTOM: Populate enhanced metadata
+                # CUSTOM: Task 4 - Build citation string
+                # Use the original full filename for doc_name context if needed by build_citation,
+                # though build_citation uses .stem. Pass the one used for metadata.doc_name.
+                citation_str = build_citation(doc_name=doc_name, page=page_number)
+
+                # CUSTOM: Task 4 - Prepare location data
+                location_info: Optional[dict] = None
+                if page_number is not None and bbox_data:
+                    location_info = {"page": page_number, "bbox": bbox_data}
+
+                # CUSTOM: Populate enhanced metadata (Task 3 & Task 4)
                 metadata = ChunkMetadata(
                     doc_id=doc_id,
-                    doc_name=doc_name, # Original filename (stem) or derived from URL
+                    doc_name=doc_name,
                     page=page_number,
                     chunk_index=chunk_idx,
-                    section=current_section_title # Will be None for now
+                    section=current_section_title, # Will be None for now (Task 3 deferral)
+                    citation=citation_str, # Task 4
+                    location=location_info # Task 4
                 )
 
                 chunk = Chunk(text=text_content, chunk_id=chunk_id, metadata=metadata)

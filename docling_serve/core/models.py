@@ -1,22 +1,24 @@
 # Pydantic models for ingestion API
 # CUSTOM: This file is part of the new ingestion API support modules
 
-from typing import List, Optional
+from typing import List, Optional, Dict, Any # Added Dict, Any for location
 
-from pydantic import BaseModel, HttpUrl
+from pydantic import BaseModel, HttpUrl, Field
 
 class ChunkMetadata(BaseModel):
     """
     Metadata for a single text chunk.
     """
     # CUSTOM: Added doc_id, doc_name, chunk_index as per Task 3
-    # CUSTOM: Changed page to int (non-optional) as per Task 3 schema
     # CUSTOM: Added optional section as per Task 3
+    # CUSTOM: Task 4 - Reverted page to Optional[int] and added citation, location
     doc_id: str
     doc_name: str
-    page: int  # Assuming page numbers are always available or defaulted (e.g., to 0 or 1)
+    page: Optional[int] = None # Changed back to Optional as per Task 4 schema and requirements
     chunk_index: int
     section: Optional[str] = None
+    citation: str
+    location: Optional[Dict[str, Any]] = Field(default=None, examples=[{"page": 1, "bbox": [0.1, 0.1, 0.5, 0.2]}])
     # Further metadata fields can be added here in subsequent tasks
 
 class Chunk(BaseModel):

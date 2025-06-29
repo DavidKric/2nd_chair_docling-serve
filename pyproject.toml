@@ -37,6 +37,7 @@ dependencies = [
     "docling[vlm]~=2.38",
     "docling-core>=2.32.0",
     "mlx-vlm~=0.1.12; sys_platform == 'darwin' and platform_machine == 'arm64'",
+    "transformers~=4.30", # CUSTOM: Added for HybridChunker tokenizer
     "fastapi[standard]~=0.115",
     "httpx~=0.28",
     "kfp[kubernetes]>=2.10.0",

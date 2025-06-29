@@ -16,9 +16,12 @@ class ChunkMetadata(BaseModel):
     doc_name: str
     page: Optional[int] = None # Changed back to Optional as per Task 4 schema and requirements
     chunk_index: int
-    section: Optional[str] = None
+    # CUSTOM: Refactor - Changed section to List[str] for HybridChunker output (Task 6 plan / Refactor)
+    section: Optional[List[str]] = None
     citation: str
     location: Optional[Dict[str, Any]] = Field(default=None, examples=[{"page": 1, "bbox": [0.1, 0.1, 0.5, 0.2]}])
+    # CUSTOM: Refactor - Added content_type for HybridChunker output (Task 6 plan / Refactor)
+    content_type: Optional[str] = None
     # Further metadata fields can be added here in subsequent tasks
 
 class Chunk(BaseModel):
@@ -28,6 +31,8 @@ class Chunk(BaseModel):
     # CUSTOM: Added chunk_id as per Task 3
     chunk_id: str
     text: str
+    # CUSTOM: Refactor - Added enriched_text for HybridChunker output (Task 6 plan / Refactor)
+    enriched_text: Optional[str] = None
     metadata: ChunkMetadata
 
 class IngestionRequest(BaseModel): # Added for completeness, though not strictly required by plan for response

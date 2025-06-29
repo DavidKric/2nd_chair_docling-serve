@@ -44,6 +44,17 @@ class IngestionResponse(BaseModel):
     """
     # CUSTOM: Added doc_id as per Task 3
     doc_id: str
-    doc_name: str # doc_name was already here, ensuring it stays
+    doc_name: str
     chunks: List[Chunk]
-    # doc_id: Optional[str] = None # Previous placeholder, now a required field above
+    # This model might be deprecated in favor of IngestionApiResponse for the /ingest endpoint
+
+
+# CUSTOM: New response model for Task 5 to include vector_db_status
+class IngestionApiResponse(BaseModel):
+    """
+    Standard API response for the document ingestion endpoint, including vector DB status.
+    """
+    doc_id: str
+    doc_name: str
+    chunks: List[Chunk] # List of Chunk objects (which include metadata)
+    vector_db_status: str

@@ -4,8 +4,9 @@
 import asyncio
 import tempfile
 import os
+import logging # CUSTOM: Added for Task 5 logging
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List # CUSTOM: Added List for Task 5
 
 from fastapi import APIRouter, File, UploadFile, HTTPException, Form
 from pydantic import HttpUrl
@@ -15,11 +16,17 @@ from docling_core.document.docling_document import TextItem, DoclingDocument, Do
 from docling_core.document.document_authorship import DocumentAuthorship # For potential metadata like author, title
 from docling_core.document.document_elements import Group, SectionHeaderItem # For section extraction
 
-from docling_serve.core.models import Chunk, ChunkMetadata, IngestionResponse
+# CUSTOM: Updated model import for Task 5
+from docling_serve.core.models import Chunk, ChunkMetadata, IngestionApiResponse
 # CUSTOM: Import ID generation functions from Task 3
 from docling_serve.core.ids import compute_doc_id, compute_chunk_id
 # CUSTOM: Import citation building function from Task 4
 from docling_serve.core.citations import build_citation
+# CUSTOM: Import stub indexing function for Task 5
+from docling_serve.indexing.vector_db import index_chunks_in_vector_db
+
+# CUSTOM: Setup logger for Task 5
+logger = logging.getLogger(__name__)
 
 # Initialize router
 # The prefix /v1 will be added when including this router in the main app
@@ -27,7 +34,7 @@ router = APIRouter(
     tags=["Ingestion"],
 )
 
-@router.post("/ingest", response_model=IngestionResponse)
+@router.post("/ingest", response_model=IngestionApiResponse) # CUSTOM: Changed response_model for Task 5
 async def ingest_document(
     file: Optional[UploadFile] = File(None, description="Document file to ingest."),
     source: Optional[HttpUrl] = Form(None, description="URL of the document to ingest.") # Using Form for HttpUrl to be part of form-data
@@ -205,8 +212,21 @@ async def ingest_document(
                 chunk = Chunk(text=text_content, chunk_id=chunk_id, metadata=metadata)
                 extracted_chunks.append(chunk)
 
-        # print(f"DEBUG: Extracted {len(extracted_chunks)} chunks for doc_id {doc_id}, doc_name {doc_name}")
-        return IngestionResponse(doc_id=doc_id, doc_name=doc_name, chunks=extracted_chunks)
+        # CUSTOM: Task 5 - Call stub indexing function and log status
+        vector_db_status = index_chunks_in_vector_db(chunks=extracted_chunks, doc_id=doc_id)
+        logger.info(
+            "Prepared %s chunks for doc %s (vector DB status: %s)",
+            len(extracted_chunks),
+            doc_id,
+            vector_db_status, # Using the status from the function
+        )
+
+        return IngestionApiResponse(
+            doc_id=doc_id,
+            doc_name=doc_name,
+            chunks=extracted_chunks,
+            vector_db_status=vector_db_status
+        )
 
     except HTTPException:
         raise
